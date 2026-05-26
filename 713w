@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>智能回收箱 | Teachable Machine AI 识别</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto;
+            background: #f2f2f6;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            background: white;
+            border-radius: 56px;
+            padding: 28px 24px;
+            max-width: 550px;
+            width: 100%;
+            margin: 0 auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #1c1c1e;
+            font-weight: 620;
+            letter-spacing: -0.3px;
+        }
+
+        button {
+            background: #007aff;
+            border: none;
+            border-radius: 60px;
+            color: white;
+            font-weight: 600;
+            padding: 12px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.2s ease;
+        }
+
+        button:active {
+            transform: scale(0.96);
+            opacity: 0.8;
+        }
+
+        button.secondary {
+            background: #8e8e93;
+        }
+
+        button.success {
+            background: #34c759;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 40px;
+            text-align: center;
+            margin: 12px 0;
+            font-weight: 500;
+        }
+
+        .connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 16px 0;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .mode-buttons button {
+            flex: 1;
+            padding: 14px;
+            font-size: 1.1rem;
+            border-radius: 60px;
+        }
+
+        .mode-active {
+            background: #007aff;
+            color: white;
+        }
+
+        .mode-inactive {
+            background: #e9e9ef;
+            color: #1c1c1e;
+        }
+
+        .panel-content {
+            display: none;
+        }
+
+        .panel-content.active {
+            display: block;
+        }
+
+        .video-container {
+            background: #000;
+            border-radius: 32px;
+            overflow: hidden;
+            margin: 12px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        video,
+        canvas {
+            width: 100%;
+            display: block;
+        }
+
+        .result-area {
+            background: #f0f7ff;
+            border-radius: 32px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 0.9rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .log-area {
+            background: #1c1c1e;
+            color: #34c759;
+            border-radius: 32px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 0.75rem;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .floor-item {
+            background: #f9f9fc;
+            border-radius: 32px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border: 0.5px solid #e9e9ef;
+        }
+
+        .lang-row {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .lang-btn {
+            flex: 1;
+            background: #e9e9ef;
+            padding: 14px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-radius: 60px;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .lang-btn:active {
+            transform: scale(0.97);
+        }
+
+        .word-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .word-btn {
+            background: #007aff20;
+            color: #007aff;
+            font-weight: 600;
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            border-radius: 60px;
+            cursor: pointer;
+            border: none;
+            flex: 1;
+            min-width: 120px;
+            transition: all 0.2s;
+        }
+
+        .word-btn:active {
+            transform: scale(0.96);
+            background: #007aff40;
+        }
+
+        .mapping-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e3e3e8;
+        }
+
+        .mapping-table {
+            background: #f9f9fc;
+            border-radius: 32px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+
+        .model-status {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 40px;
+            display: inline-block;
+            margin-left: 8px;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .model-loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .model-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        input {
+            border-radius: 60px;
+            border: 1px solid #e3e3e8;
+            padding: 12px 16px;
+            font-size: 1rem;
+            background: #f9f9fc;
+            width: 100%;
+        }
+
+        .camera-status {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 40px;
+            display: inline-block;
+            margin-left: 8px;
+            background: #e9e9ef;
+            color: #1c1c1e;
+        }
+
+        .camera-ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .camera-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+</head>
+
+<body>
+    <div id="appContainer" class="card"></div>
+
+    <script>
+        // ============================================================
+        // Teachable Machine 模型配置
+        // ============================================================
+        const TM_MODEL_URL = "https://teachablemachine.withgoogle.com/models/eb09AtC7A/";
+        const IS_TM_CONFIGURED = true;
+
+        // 全局变量
+        let appLanguage = 'zh';
+        let floors = [];
+        let bleDevice = null;
+        let txChar = null;
+        let isBleConnected = false;
+        let currentStream = null;
+        let currentRecognition = null;
+        let isListening = false;
+        let tmModel = null;
+        let isModelLoaded = false;
+        let cameraReady = false;
+
+        const UART_SERVICE = '6e400001-b5a3-f393-e0e9-e50e24dcca9e';
+        const TX_CHAR = '6e400002-b5a3-f393-e0e9-e50e24dcca9e';
+        const DEFAULT_CMD = "$";
+
+        function getCommandByFloor(floorNum) {
+            switch (floorNum) {
+                case 1: return "$";
+                case 2: return ",";
+                case 3: return ".";
+                default: return "$";
+            }
+        }
+
+        function addLog(msg, type) {
+            let logDiv = document.getElementById('logArea');
+            if (!logDiv) return;
+            let time = new Date().toLocaleTimeString();
+            let entry = document.createElement('div');
+            entry.textContent = time + ' : ' + msg;
+            if (type === 'error') entry.style.color = '#ff5e5e';
+            else if (type === 'success') entry.style.color = '#34c759';
+            else if (type === 'warning') entry.style.color = '#ff9f0a';
+            else entry.style.color = '#ffffff';
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(msg);
+        }
+
+        function getCommandByName(name) {
+            if (!name) return DEFAULT_CMD;
+            let lowerName = name.toLowerCase();
+            for (let f of floors) {
+                if (f.name.toLowerCase() === lowerName) return f.command;
+                if (lowerName.includes(f.name.toLowerCase()) ||
+                    f.name.toLowerCase().includes(lowerName)) return f.command;
+            }
+            return DEFAULT_CMD;
+        }
+
+        // ========== 加载 Teachable Machine 模型 ==========
+        async function loadTeachableMachine() {
+            let statusSpan = document.getElementById('modelStatus');
+            if (statusSpan) {
+                statusSpan.innerHTML = '加载模型中...';
+                statusSpan.className = 'model-status model-loading';
+            }
+            addLog('[模型] 開始加載 Teachable Machine 模型...', 'info');
+
+            if (!IS_TM_CONFIGURED) {
+                addLog('[模型] 錯誤: 未配置模型 URL', 'error');
+                if (statusSpan) {
+                    statusSpan.innerHTML = '未配置模型';
+                    statusSpan.className = 'model-status model-error';
+                }
+                return false;
+            }
+
+            try {
+                const modelURL = TM_MODEL_URL + "model.json";
+                const metadataURL = TM_MODEL_URL + "metadata.json";
+                addLog(`[模型] 模型 URL: ${modelURL}`, 'info');
+                tmModel = await tmImage.load(modelURL, metadataURL);
+                isModelLoaded = true;
+                addLog('[模型] Teachable Machine 模型加载成功！', 'success');
+                if (statusSpan) {
+                    statusSpan.innerHTML = 'AI模型已加载';
+                    statusSpan.className = 'model-status';
+                }
+                return true;
+            } catch (error) {
+                addLog('[模型] 模型加载失败: ' + error.message, 'error');
+                if (statusSpan) {
+                    statusSpan.innerHTML = '模型加载失败';
+                    statusSpan.className = 'model-status model-error';
+                }
+                return false;
+            }
+        }
+
+        // ========== 使用 Teachable Machine 识别图片 ==========
+        async function recognizeWithTeachableMachine(imageElement) {
+            if (!tmModel || !isModelLoaded) {
+                addLog('[識別] 模型未加载，无法识别', 'error');
+                return null;
+            }
+
+            try {
+                addLog('[識別] Teachable Machine 识别中...', 'info');
+                const startTime = Date.now();
+                const predictions = await tmModel.predict(imageElement);
+                const elapsed = Date.now() - startTime;
+                addLog(`[識別] 推理耗时: ${elapsed}ms`, 'info');
+
+                let bestPrediction = predictions[0];
+                for (let i = 1; i < predictions.length; i++) {
+                    if (predictions[i].probability > bestPrediction.probability) {
+                        bestPrediction = predictions[i];
+                    }
+                }
+
+                const confidence = bestPrediction.probability;
+                const label = bestPrediction.className;
+
+                addLog(`[識別] 结果: ${label} (置信度: ${(confidence * 100).toFixed(1)}%)`, 'success');
+
+                if (confidence < 0.6) {
+                    addLog(`[識別] 置信度过低(${(confidence * 100).toFixed(1)}%)，使用默认指令`, 'warning');
+                    return null;
+                }
+
+                return { label: label, confidence: confidence };
+            } catch (error) {
+                addLog('[識別] 识别失败: ' + error.message, 'error');
+                return null;
+            }
+        }
+
+        // ========== 蓝牙模块 ==========
+        async function sendToMicrobit(msg) {
+            if (!bleDevice || !bleDevice.gatt?.connected || !txChar) {
+                addLog('[藍牙] 蓝牙未连接，无法发送', 'error');
+                return false;
+            }
+            try {
+                await txChar.writeValueWithResponse(new TextEncoder().encode(msg));
+                addLog(`[藍牙] 已发送: ${msg}`, 'success');
+                return true;
+            } catch (e) {
+                try {
+                    await txChar.writeValueWithoutResponse(new TextEncoder().encode(msg));
+                    addLog(`[藍牙] 已发送(无响应): ${msg}`, 'success');
+                    return true;
+                } catch (e2) {
+                    addLog('[藍牙] 发送失败: ' + e2.message, 'error');
+                    return false;
+                }
+            }
+        }
+
+        async function connectBluetooth() {
+            if (!navigator.bluetooth) { alert("请使用 Chrome 或 Bluefy 浏览器"); return; }
+            addLog('[藍牙] 开始连接 micro:bit...', 'info');
+            try {
+                let device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [UART_SERVICE] }, { namePrefix: 'BBC micro:bit' }],
+                    optionalServices: [UART_SERVICE]
+                });
+                bleDevice = device;
+                addLog(`[藍牙] 已选择设备: ${device.name}`, 'success');
+                let server = await device.gatt.connect();
+                addLog('[藍牙] GATT 连接成功', 'success');
+                let service = await server.getPrimaryService(UART_SERVICE);
+                let char = await service.getCharacteristic(TX_CHAR);
+                txChar = char;
+                isBleConnected = true;
+                let ss = document.getElementById('bleStatusText');
+                if (ss) { ss.innerHTML = '已连接: ' + device.name; ss.className = 'status connected'; }
+                addLog('[藍牙] micro:bit 已连接', 'success');
+                device.addEventListener('gattserverdisconnected', () => {
+                    isBleConnected = false;
+                    txChar = null;
+                    let ss2 = document.getElementById('bleStatusText');
+                    if (ss2) { ss2.innerHTML = '未连接'; ss2.className = 'status disconnected'; }
+                    addLog('[藍牙] micro:bit 已断开', 'warning');
+                });
+            } catch (e) { addLog('[藍牙] 连接失败: ' + e.message, 'error'); alert('连接失败: ' + e.message); }
+        }
+
+        function disconnectBluetooth() {
+            if (bleDevice?.gatt?.connected) bleDevice.gatt.disconnect();
+            txChar = null;
+            isBleConnected = false;
+            let ss = document.getElementById('bleStatusText');
+            if (ss) { ss.innerHTML = '未连接'; ss.className = 'status disconnected'; }
+            addLog('[藍牙] 已手动断开蓝牙', 'info');
+        }
+
+        // ========== 增强版相机模块 ==========
+        let videoElem, canvasElem, cameraStream;
+        let cameraRetryCount = 0;
+        const MAX_CAMERA_RETRY = 3;
+
+        async function initCamera() {
+            let resultDiv = document.getElementById('aiResult');
+            let cameraStatusSpan = document.getElementById('cameraStatus');
+            
+            if (cameraStatusSpan) {
+                cameraStatusSpan.innerHTML = '啟動中...';
+                cameraStatusSpan.className = 'camera-status';
+            }
+            if (resultDiv) {
+                resultDiv.innerHTML = '📷 正在啟動相機，請稍候...';
+            }
+            addLog('[相機] 正在啟動相機...', 'info');
+            
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+                addLog('[相機] 已停止舊的相機串流', 'info');
+            }
+            
+            await new Promise(r => setTimeout(r, 500));
+            
+            const constraintsList = [
+                { video: { facingMode: 'environment' } },
+                { video: { facingMode: { exact: 'environment' } } },
+                { video: true }
+            ];
+            
+            for (let i = 0; i < constraintsList.length; i++) {
+                try {
+                    addLog(`[相機] 嘗試相機設定 ${i + 1}...`, 'info');
+                    const stream = await navigator.mediaDevices.getUserMedia(constraintsList[i]);
+                    cameraStream = stream;
+                    
+                    if (videoElem) {
+                        videoElem.srcObject = stream;
+                        await new Promise((resolve) => {
+                            videoElem.onloadedmetadata = () => {
+                                videoElem.play();
+                                resolve();
+                            };
+                            setTimeout(resolve, 3000);
+                        });
+                        cameraReady = true;
+                        addLog('[相機] 相機已成功啟動', 'success');
+                        if (cameraStatusSpan) {
+                            cameraStatusSpan.innerHTML = '已就緒';
+                            cameraStatusSpan.className = 'camera-status camera-ready';
+                        }
+                        if (resultDiv) {
+                            resultDiv.innerHTML = '✅ 相機已就緒，可以拍照';
+                            setTimeout(() => {
+                                if (resultDiv.innerHTML === '✅ 相機已就緒，可以拍照') {
+                                    resultDiv.innerHTML = '等待拍照';
+                                }
+                            }, 2000);
+                        }
+                        return true;
+                    }
+                } catch(e) {
+                    addLog(`[相機] 相機設定 ${i + 1} 失敗: ${e.message}`, 'warning');
+                }
+            }
+            
+            cameraReady = false;
+            addLog('[相機] 無法啟動相機，請檢查權限設定', 'error');
+            if (cameraStatusSpan) {
+                cameraStatusSpan.innerHTML = '啟動失敗';
+                cameraStatusSpan.className = 'camera-status camera-error';
+            }
+            if (resultDiv) {
+                resultDiv.innerHTML = '❌ 無法啟動相機<br>請到「設定」→「隱私權」→「相機」→ 允許瀏覽器';
+            }
+            alert('無法啟動相機，請檢查相機權限設定');
+            return false;
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+                cameraReady = false;
+                addLog('[相機] 相機已關閉', 'info');
+                let cameraStatusSpan = document.getElementById('cameraStatus');
+                if (cameraStatusSpan) {
+                    cameraStatusSpan.innerHTML = '已關閉';
+                    cameraStatusSpan.className = 'camera-status';
+                }
+            }
+        }
+
+        // ========== 语音模块 ==========
+        function initVoiceMode() {
+            if (currentRecognition && isListening) currentRecognition.stop();
+            let SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) { addLog('[語音] 浏览器不支持语音识别', 'error'); return null; }
+            let rec = new SR();
+            rec.lang = appLanguage === 'zh' ? 'cmn-Hans-CN' : 'en-US';
+            rec.continuous = true;
+            rec.onresult = (e) => {
+                let text = e.results[e.results.length - 1][0].transcript.trim();
+                addLog(`[語音] 识别: ${text}`, 'info');
+                let cmd = getCommandByName(text);
+                document.getElementById('voiceResult').innerHTML = `识别: "${text}" → 发送 ${cmd}`;
+                sendToMicrobit(cmd);
+            };
+            rec.onend = () => { if (isListening) rec.start(); };
+            addLog('[語音] 语音模块已初始化', 'success');
+            return rec;
+        }
+
+        let currentVoice = null;
+
+        // ========== UI 流程 ==========
+        function renderLanguageScreen() {
+            let container = document.getElementById('appContainer');
+            container.innerHTML = `<h1>选择语言</h1><div class="lang-row"><button id="langZh" class="lang-btn">中文</button><button id="langEn" class="lang-btn">English</button></div>`;
+            document.getElementById('langZh').onclick = () => { appLanguage = 'zh'; renderFloorCountScreen(); };
+            document.getElementById('langEn').onclick = () => { appLanguage = 'en'; renderFloorCountScreen(); };
+        }
+
+        function renderFloorCountScreen() {
+            let container = document.getElementById('appContainer');
+            container.innerHTML = `<h1>设置层数</h1><input type="number" id="floorCount" min="1" max="3" value="3"><button id="nextBtn">下一步</button>`;
+            document.getElementById('nextBtn').onclick = () => {
+                let cnt = parseInt(document.getElementById('floorCount').value);
+                if (cnt < 1) cnt = 1;
+                if (cnt > 3) cnt = 3;
+                renderFloorsNaming(cnt);
+            };
+        }
+
+        function renderFloorsNaming(cnt) {
+            let def = appLanguage === 'zh' ? ['塑料瓶', '纸箱', '易拉罐'] : ['plastic bottle', 'paper', 'can'];
+            let html = `<h1>命名每一层</h1><p>⚠️ 未匹配的物品会统一发送 $ 符号</p>`;
+            for (let i = 0; i < cnt; i++) {
+                html += `<div class="floor-item">
+                            <label>第${i + 1}层名称</label>
+                            <input type="text" id="floorName${i}" value="${def[i]}">
+                            <div style="font-size:0.75rem;">蓝牙指令: ${getCommandByFloor(i + 1)}</div>
+                        </div>`;
+            }
+            html += `<button id="saveBtn">保存并进入主界面</button>`;
+            let container = document.getElementById('appContainer');
+            container.innerHTML = html;
+            document.getElementById('saveBtn').onclick = () => {
+                floors = [];
+                for (let i = 0; i < cnt; i++) {
+                    let name = document.getElementById(`floorName${i}`).value.trim();
+                    if (!name) name = `item${i + 1}`;
+                    floors.push({ name: name, command: getCommandByFloor(i + 1) });
+                }
+                renderMainCentral();
+            };
+        }
+
+        function renderMainCentral() {
+            if (currentVoice && isListening) currentVoice.stop();
+            stopCamera();
+
+            let floorHtml = floors.map(f => `<div class="mapping-row"><strong>${f.name}</strong> → ${f.command}</div>`).join('');
+            let container = document.getElementById('appContainer');
+            container.innerHTML = `
+                <h1>回收箱控制 <span id="modelStatus" class="model-status">加载模型中...</span></h1>
+                <div id="bleStatusText" class="status disconnected">未连接</div>
+                <div class="flex"><button id="connectBtn">连接 micro:bit</button><button id="disconnectBtn" class="secondary">断开</button></div>
+                <div class="mapping-table">${floorHtml}</div>
+                <div class="mode-buttons">
+                    <button id="modeManualBtn" class="mode-active">按钮模式</button>
+                    <button id="modePhotoBtn" class="mode-inactive">扫描模式</button>
+                    <button id="modeVoiceBtn" class="mode-inactive">录音模式</button>
+                </div>
+                <div id="manualPanel" class="panel-content active"><div class="word-buttons" id="manualButtons"></div></div>
+                <div id="photoPanel" class="panel-content">
+                    <div class="video-container">
+                        <video id="video" autoplay muted playsinline></video>
+                        <canvas id="canvas" style="display:none"></canvas>
+                    </div>
+                    <div class="flex" style="justify-content: space-between; align-items: center;">
+                        <span id="cameraStatus" class="camera-status">未啟動</span>
+                        <button id="captureBtn">拍照识别</button>
+                    </div>
+                    <div id="aiResult" class="result-area">等待拍照</div>
+                </div>
+                <div id="voicePanel" class="panel-content"><div class="flex"><button id="startVoiceBtn" class="success">开始录音</button><button id="stopVoiceBtn" class="secondary">停止录音</button></div><div id="voiceResult" class="result-area">说出上面设置的自定义名称</div></div>
+                <div id="logArea" class="log-area"></div>
+            `;
+
+            videoElem = document.getElementById('video');
+            canvasElem = document.getElementById('canvas');
+
+            loadTeachableMachine();
+
+            let manualDiv = document.getElementById('manualButtons');
+            manualDiv.innerHTML = '';
+            for (let f of floors) {
+                let btn = document.createElement('button');
+                btn.className = 'word-btn';
+                btn.innerHTML = `${f.name}<br><span style="font-size:0.7rem;">${f.command}</span>`;
+                btn.onclick = () => sendToMicrobit(f.command);
+                manualDiv.appendChild(btn);
+            }
+
+            document.getElementById('connectBtn').onclick = connectBluetooth;
+            document.getElementById('disconnectBtn').onclick = disconnectBluetooth;
+
+            let manualPanel = document.getElementById('manualPanel');
+            let photoPanel = document.getElementById('photoPanel');
+            let voicePanel = document.getElementById('voicePanel');
+            let modeManual = document.getElementById('modeManualBtn');
+            let modePhoto = document.getElementById('modePhotoBtn');
+            let modeVoice = document.getElementById('modeVoiceBtn');
+
+            modeManual.onclick = () => {
+                manualPanel.classList.add('active'); photoPanel.classList.remove('active'); voicePanel.classList.remove('active');
+                modeManual.className = 'mode-active'; modePhoto.className = 'mode-inactive'; modeVoice.className = 'mode-inactive';
+                if (currentVoice && isListening) currentVoice.stop();
+                stopCamera();
+                addLog('[界面] 切换到按钮模式', 'info');
+            };
+            modePhoto.onclick = () => {
+                manualPanel.classList.remove('active'); photoPanel.classList.add('active'); voicePanel.classList.remove('active');
+                modeManual.className = 'mode-inactive'; modePhoto.className = 'mode-active'; modeVoice.className = 'mode-inactive';
+                if (currentVoice && isListening) currentVoice.stop();
+                initCamera();
+                addLog('[界面] 切换到扫描模式', 'info');
+            };
+            modeVoice.onclick = () => {
+                manualPanel.classList.remove('active'); photoPanel.classList.remove('active'); voicePanel.classList.add('active');
+                modeManual.className = 'mode-inactive'; modePhoto.className = 'mode-inactive'; modeVoice.className = 'mode-active';
+                stopCamera();
+                if (currentVoice) currentVoice = null;
+                currentVoice = initVoiceMode();
+                addLog('[界面] 切换到录音模式', 'info');
+            };
+
+            document.getElementById('captureBtn').onclick = async () => {
+                addLog('[拍照] 用户点击拍照按钮', 'info');
+                if (!videoElem?.videoWidth || videoElem.videoWidth === 0) {
+                    addLog('[拍照] 相机未就绪，无法拍照', 'error');
+                    alert('相机未就绪，请稍后再试');
+                    return;
+                }
+                if (!isModelLoaded) {
+                    addLog('[拍照] AI模型未加载完成', 'error');
+                    alert('AI模型未加载完成，请稍后再试');
+                    return;
+                }
+                if (!cameraReady) {
+                    addLog('[拍照] 相机尚未准备就绪', 'warning');
+                    alert('相机尚未准备就绪，请稍后');
+                    return;
+                }
+
+                canvasElem.width = videoElem.videoWidth;
+                canvasElem.height = videoElem.videoHeight;
+                canvasElem.getContext('2d').drawImage(videoElem, 0, 0);
+                let resultDiv = document.getElementById('aiResult');
+                resultDiv.innerHTML = '🤖 AI 识别中...';
+                addLog('[拍照] 拍照完成，开始 AI 识别', 'info');
+
+                let aiResult = await recognizeWithTeachableMachine(canvasElem);
+
+                if (aiResult && aiResult.label) {
+                    let cmd = getCommandByName(aiResult.label);
+                    let confidence = (aiResult.confidence * 100).toFixed(1);
+                    resultDiv.innerHTML = `识别: ${aiResult.label} (置信度 ${confidence}%)<br>发送指令: ${cmd}`;
+                    addLog(`[拍照] 识别结果: ${aiResult.label} -> 发送指令 ${cmd}`, 'success');
+                    sendToMicrobit(cmd);
+                } else {
+                    resultDiv.innerHTML = `识别失败或置信度过低，发送默认指令 ${DEFAULT_CMD}`;
+                    addLog(`[拍照] 识别失败，发送默认指令 ${DEFAULT_CMD}`, 'warning');
+                    sendToMicrobit(DEFAULT_CMD);
+                }
+            };
+
+            document.getElementById('startVoiceBtn').onclick = () => {
+                if (!currentVoice) currentVoice = initVoiceMode();
+                if (currentVoice) {
+                    currentVoice.start();
+                    isListening = true;
+                    document.getElementById('voiceResult').innerHTML = '🎤 监听中... 说出上面设置的自定义物品名称';
+                    addLog('[語音] 语音识别已启动', 'success');
+                }
+            };
+            document.getElementById('stopVoiceBtn').onclick = () => {
+                if (currentVoice && isListening) {
+                    currentVoice.stop();
+                    isListening = false;
+                    document.getElementById('voiceResult').innerHTML = '⏸️ 已停止';
+                    addLog('[語音] 语音识别已停止', 'info');
+                }
+            };
+        }
+
+        renderLanguageScreen();
+    </script>
+</body>
+
+</html>
